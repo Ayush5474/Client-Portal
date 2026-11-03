@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ClientHub</title>
+<script>try{var t=localStorage.getItem('clienthub_theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.dataset.theme=t}catch(e){}</script>
+<style>
+:root{
+ --bg:#f7f8fa;--surface:#fff;--sunken:#f2f4f7;--ink:#101828;--mute:#667085;--faint:#98a2b3;--line:#eaecf0;--line2:#d9dde5;
+ --accent:#4f46e5;--accent-ink:#fff;--accent-soft:#eef0ff;
+ --ok:#12874a;--ok-soft:#e6f6ed;--warn:#b86a00;--warn-soft:#fdf1dc;--bad:#d1342f;--bad-soft:#fdeceb;
+ --shadow:0 1px 2px rgba(16,24,40,.04),0 1px 3px rgba(16,24,40,.06);--shadow-lg:0 20px 48px rgba(16,24,40,.18);--r:12px;
+}
+:root[data-theme=dark]{
+ --bg:#0b0d12;--surface:#12151c;--sunken:#191d27;--ink:#eef0f4;--mute:#9aa3b2;--faint:#667085;--line:#222733;--line2:#2e3544;
+ --accent:#818cf8;--accent-ink:#0b0d12;--accent-soft:#1b1f3d;
+ --ok:#4ade80;--ok-soft:#10261a;--warn:#fbbf24;--warn-soft:#2a2010;--bad:#f87171;--bad-soft:#2d1514;
+ --shadow:0 1px 2px rgba(0,0,0,.3);--shadow-lg:0 20px 48px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--accent);text-decoration:none;cursor:pointer}a:hover{text-decoration:underline}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;vertical-align:-3px}
+.mute{color:var(--mute)}.faint{color:var(--faint)}.small{font-size:12px}
+/* buttons & inputs */
+.btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border:1px solid var(--line2);background:var(--surface);border-radius:9px;cursor:pointer;font-weight:500;white-space:nowrap}
+.btn:hover{background:var(--sunken)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}.btn.pri:hover{filter:brightness(1.08);background:var(--accent)}
+.btn.on{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.btn.ghost{border-color:transparent;background:transparent}.btn.ghost:hover{background:var(--sunken)}
+.btn.danger{color:var(--bad)}
+.btn.sm{height:28px;padding:0 9px;font-size:12px;border-radius:8px}
+.btn.icon{width:34px;padding:0;justify-content:center}.btn.sm.icon{width:28px}
+.btn.wide{width:100%;justify-content:center;height:38px;margin-top:18px}
+input,select,textarea{width:100%;height:36px;padding:0 11px;border:1px solid var(--line2);border-radius:9px;background:var(--surface);outline:none}
+textarea{height:auto;padding:9px 11px;resize:vertical}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+input[type=checkbox]{width:16px;height:16px;padding:0;accent-color:var(--accent);flex-shrink:0}
+input:disabled,select:disabled,textarea:disabled{background:var(--sunken);color:var(--mute)}
+label.f{display:block;font-size:12px;font-weight:500;color:var(--mute);margin:14px 0 5px}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+/* login */
+#login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(900px 500px at 15% -10%,var(--accent-soft),transparent),var(--bg)}
+.lcard{width:390px;max-width:100%;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:32px;box-shadow:var(--shadow-lg)}
+.lcard h2{margin:22px 0 2px;font-size:22px;letter-spacing:-.02em}.lcard p{margin:0 0 6px}
+.hintbox{margin-top:18px;padding:11px 12px;border-radius:10px;background:var(--sunken);color:var(--mute);font-size:12px}
+/* shell */
+#shell{display:flex;min-height:100vh}
+aside{width:232px;flex-shrink:0;position:sticky;top:0;height:100vh;padding:16px 12px;border-right:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 20px;font-weight:650;font-size:15px;letter-spacing:-.01em}
+.mark{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#6366f1,#4338ca);display:grid;place-items:center;color:#fff;font-size:13px;font-weight:700}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;color:var(--mute);font-weight:500}
+.nav a:hover{background:var(--sunken);color:var(--ink);text-decoration:none}
+.nav a.on{background:var(--accent-soft);color:var(--accent)}
+.me{margin-top:auto;display:flex;align-items:center;gap:10px;padding:12px 6px 2px;border-top:1px solid var(--line)}
+.me b{display:block;font-weight:600;line-height:1.2}.me span.r{font-size:12px;color:var(--mute);text-transform:capitalize}
+main{flex:1;min-width:0}
+.topbar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:8px;padding:12px 32px;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px)}
+.sb{position:relative;flex:1;min-width:180px;max-width:340px}
+.sb svg{position:absolute;left:11px;top:50%;margin-top:-8px;color:var(--faint)}
+.sb input{padding-left:34px;height:34px;background:var(--surface)}
+.badge-n{position:absolute;top:-4px;right:-4px;background:var(--bad);color:#fff;font-size:10px;font-weight:600;min-width:16px;height:16px;border-radius:99px;display:grid;place-items:center;padding:0 4px}
+.page{padding:8px 32px 56px;max-width:1280px}
+#lo-m{display:none}
+.ph{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:12px 0 20px}
+.ph h1{margin:0;font-size:24px;letter-spacing:-.02em;font-weight:650;line-height:1.25}
+.ph p{margin:3px 0 0;color:var(--mute)}
+.acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.back{display:inline-flex;align-items:center;gap:6px;color:var(--mute);font-weight:500;margin-top:8px}.back:hover{color:var(--ink);text-decoration:none}
+/* surfaces */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.pad{padding:18px}
+.ct{font-size:12px;font-weight:600;color:var(--mute);text-transform:uppercase;letter-spacing:.05em;margin:0 0 12px;display:flex;justify-content:space-between;align-items:center}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px}
+.kpi{padding:15px 18px}
+.kpi .l{font-size:12px;color:var(--mute);display:flex;align-items:center;gap:6px}
+.kpi .n{font-size:25px;font-weight:650;letter-spacing:-.02em;margin-top:3px;line-height:1.2}
+.kpi .s{font-size:12px;color:var(--mute);margin-top:1px}
+.g2{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:12px;margin-top:12px}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{font-size:11px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr:last-child td{border-bottom:0}
+tr.row{cursor:pointer}tr.row:hover td{background:var(--sunken)}
+.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.cell{display:flex;align-items:center;gap:10px}.nm{font-weight:550}.sub{color:var(--mute);font-size:12px}
+.chip{display:inline-block;background:var(--sunken);border-radius:6px;padding:1px 7px;font-size:11px;color:var(--mute);margin:0 4px 2px 0}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:500;background:var(--sunken);color:var(--mute);white-space:nowrap}
+.pill:before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.nodot:before{display:none}
+.pill.s-Active{background:var(--ok-soft);color:var(--ok)}.pill.s-OnHold{background:var(--warn-soft);color:var(--warn)}.pill.s-Churned{background:var(--bad-soft);color:var(--bad)}
+.pill.sev-High{background:var(--bad-soft);color:var(--bad)}.pill.sev-Medium{background:var(--warn-soft);color:var(--warn)}.pill.sev-Low{background:var(--sunken);color:var(--mute)}
+.pill.sev-High svg,.pill.sev-Medium svg{width:12px;height:12px;margin-right:-2px}
+.av{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;font-weight:600;font-size:12px;flex-shrink:0;background:hsl(var(--h) 80% 55%/.14);color:hsl(var(--h) 65% 40%)}
+:root[data-theme=dark] .av{color:hsl(var(--h) 85% 72%)}
+.av.sm{width:24px;height:24px;border-radius:50%;font-size:10px}.av.lg{width:52px;height:52px;border-radius:14px;font-size:18px}.av.round{border-radius:50%}
+.seg{display:inline-flex;background:var(--sunken);border-radius:9px;padding:2px}
+.seg button{border:0;background:transparent;height:30px;width:32px;border-radius:7px;cursor:pointer;color:var(--mute);display:grid;place-items:center}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.tools select{width:auto;height:34px;padding:0 10px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.cc{padding:16px;cursor:pointer;transition:transform .12s,border-color .12s}.cc:hover{transform:translateY(-1px);border-color:var(--line2)}
+.cc .row2{display:flex;justify-content:space-between;align-items:center;margin-top:14px;font-size:12px;color:var(--mute)}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin:22px 0 18px;overflow-x:auto}
+.tabs a{padding:10px 14px;color:var(--mute);font-weight:500;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.tabs a:hover{color:var(--ink);text-decoration:none}.tabs a.on{color:var(--ink);border-color:var(--accent)}
+.tabs i{font-style:normal;font-size:11px;color:var(--faint);margin-left:5px;background:var(--sunken);border-radius:99px;padding:1px 7px}
+.kv{display:grid;grid-template-columns:130px 1fr;gap:10px 16px}.kv>div:nth-child(odd){color:var(--mute)}
+.tl{margin-left:5px;padding-left:20px;border-left:1px solid var(--line2)}
+.tl .it{position:relative;padding-bottom:18px}.tl .it:last-child{padding-bottom:2px}
+.tl .it:before{content:"";position:absolute;left:-26px;top:5px;width:7px;height:7px;border-radius:50%;background:var(--surface);border:2px solid var(--accent)}
+.li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}.li:last-child{border:0;padding-bottom:0}.li:first-of-type{padding-top:0}
+.li.click{cursor:pointer}.li.click:hover .nm{color:var(--accent)}
+.bar2{display:grid;grid-template-columns:110px 1fr 22px;align-items:center;gap:10px;margin:10px 0;font-size:13px}
+.bar2 .t{color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trk{height:6px;background:var(--sunken);border-radius:9px;overflow:hidden}.trk i{display:block;height:100%;background:var(--accent);border-radius:9px}
+.bar2 b{text-align:right;font-weight:600}
+.empty{color:var(--faint);padding:8px 0}
+.done{text-decoration:line-through;color:var(--faint)}
+.fchips{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}.fchips .pill{cursor:pointer}
+/* flags */
+.fl{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}.fl:last-child{border:0;padding-bottom:0}.fl:first-of-type{padding-top:0}
+.fl.res{opacity:.55}
+.sevbar{width:3px;border-radius:3px;flex-shrink:0;background:var(--line2)}
+.sevbar.sev-High{background:var(--bad)}.sevbar.sev-Medium{background:var(--warn)}
+.ftxt{margin:6px 0 3px}.meta{font-size:12px;color:var(--mute)}.meta svg{width:12px;height:12px}
+.facts{display:flex;gap:4px;align-items:flex-start;flex-shrink:0}
+.note{background:var(--sunken);border-radius:10px;padding:11px 13px;font-size:13px;color:var(--mute);margin-bottom:14px}
+.who{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-weight:600}
+.grp{margin-bottom:22px}.grp:last-child{margin-bottom:0}
+.inline{display:grid;gap:8px;margin-bottom:16px}
+/* drawer & toast */
+#scrim{position:fixed;inset:0;background:rgba(16,24,40,.4);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+#scrim.on{opacity:1;pointer-events:auto}
+#drawer{position:fixed;top:0;right:0;bottom:0;width:480px;max-width:100%;background:var(--surface);box-shadow:var(--shadow-lg);transform:translateX(102%);visibility:hidden;transition:transform .22s ease,visibility 0s .22s;z-index:41;display:flex;flex-direction:column}
+#drawer.on{transform:none;visibility:visible;transition:transform .22s ease}
+.dh{display:flex;align-items:center;justify-content:space-between;padding:16px 22px;border-bottom:1px solid var(--line)}.dh h3{margin:0;font-size:16px;letter-spacing:-.01em}
+.db{padding:4px 22px 24px;overflow:auto;flex:1}
+.df{display:flex;justify-content:flex-end;gap:8px;padding-top:22px}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:99px;font-weight:500;display:none;z-index:99;box-shadow:var(--shadow-lg)}
+@media(max-width:860px){
+ #shell{flex-direction:column}
+ aside{position:fixed;top:auto;bottom:0;left:0;right:0;width:auto;height:58px;flex-direction:row;border-right:0;border-top:1px solid var(--line);padding:6px 8px;z-index:30}
+ .brand,.me{display:none}
+ .nav{flex-direction:row;width:100%;justify-content:space-around}
+ .nav a{flex-direction:column;gap:2px;font-size:10px;padding:6px 12px}
+ .topbar{padding:10px 16px}.page{padding:4px 16px 90px}#lo-m{display:inline-flex}
+ .kv{grid-template-columns:100px 1fr}.hm{display:none}
+ .r2{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div id="login"></div>
+<div id="shell" style="display:none">
+  <aside>
+    <div class="brand"><span class="mark">C</span>ClientHub</div>
+    <nav class="nav" id="nav"></nav>
+    <div class="me" id="me"></div>
+  </aside>
+  <main>
+    <div class="topbar" id="topbar"></div>
+    <div class="page" id="view"></div>
+  </main>
+</div>
+<div id="scrim" onclick="closeSheet()"></div>
+<div id="drawer" aria-live="polite"></div>
+<div id="toast"></div>
+
+<script>
+/* ============ icons & helpers ============ */
+const ICONS={
+ dashboard:'<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
+ users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+ tasks:'<path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+ clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+ shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>',
+ search:'<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
+ bell:'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+ download:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',
+ upload:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/>',
+ sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+ moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+ flag:'<path d="M4 22V4"/><path d="M4 4h13l-2 4 2 4H4"/>',
+ briefcase:'<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>',
+ edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+ trash:'<path d="M3 6h18"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',
+ arrowleft:'<path d="M19 12H5"/><path d="m12 19-7-7 7-7"/>',
+ ext:'<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/>',
+ x:'<path d="M18 6 6 18M6 6l12 12"/>',
+ grid:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+ list:'<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+ logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',
+ db:'<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/><path d="M3 12c0 1.7 4 3 9 3s9-1.3 9-3"/>'
+};
+const ico=n=>`<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n]||''}</svg>`;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=p=>p+Math.random().toString(36).slice(2,10);
+const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const dayOff=n=>{const d=new Date();d.setDate(d.getDate()+n);return iso(d)};
+const today=()=>iso(new Date());
+const pd=s=>{const [y,m,d]=String(s).split('-').map(Number);return new Date(y,m-1,d)};
+const daysTo=s=>Math.round((pd(s)-pd(today()))/864e5);
+const ago=n=>new Date(Date.now()-n*864e5).toISOString();
+const money=n=>{n=+n||0;return n>=1e7?'₹'+(n/1e7).toFixed(2)+' Cr':n>=1e5?'₹'+(n/1e5).toFixed(1)+' L':'₹'+n.toLocaleString('en-IN')};
+const fmtDate=s=>s?pd(s).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'—';
+const fmtMonth=s=>{if(!s)return 'Present';const [y,m]=s.split('-').map(Number);return new Date(y,m-1,1).toLocaleDateString('en-IN',{month:'short',year:'numeric'})};
+const fmtTs=t=>new Date(t).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+const rel=n=>n===0?'today':n>0?`in ${n}d`:`${-n}d ago`;
+const hue=s=>[...String(s)].reduce((a,c)=>(a*31+c.charCodeAt(0))%360,7);
+const initials=n=>String(n).split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+const av=(name,cls='')=>`<span class="av ${cls}" style="--h:${hue(name)}">${esc(initials(name))}</span>`;
+const safeUrl=u=>{u=String(u||'').trim();return !u?'':/^https?:\/\//i.test(u)?u:'https://'+u};
+const sk=s=>String(s).replace(/\s/g,'');
+const statusPill=s=>`<span class="pill s-${sk(s)}">${esc(s)}</span>`;
+function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display='none',2400)}
+
+/* ============ constants ============ */
+const SEV={Low:1,Medium:2,High:3};
+const STATUSES=['Active','On hold','Churned'];
+const FLAG_TYPES=['Risk','Opportunity','Payment','Relationship','Legal','VIP','Other'];
+const INTER_TYPES=['Call','Meeting','Email','Note','Demo'];
+const USERS=[
+ {id:'usr_01',name:'Asha Mehta',email:'admin@demo.com',role:'admin',active:true,createdAt:'2026-01-05T09:00:00.000Z'},
+ {id:'usr_02',name:'Rahul Verma',email:'manager@demo.com',role:'manager',active:true,createdAt:'2026-01-05T09:00:00.000Z'},
+ {id:'usr_03',name:'Priya Nair',email:'priya@demo.com',role:'staff',active:true,createdAt:'2026-01-12T09:00:00.000Z'},
+ {id:'usr_04',name:'Karan Shah',email:'karan@demo.com',role:'staff',active:true,createdAt:'2026-01-12T09:00:00.000Z'}];
+
+/* ============ seed data (same field names as the backend schema) ============ */
+function seed(){
+ const cnt={};const sid=p=>p+String(cnt[p]=(cnt[p]||0)+1).padStart(3,'0');
+ const now=new Date().toISOString();
+ const mk=(company,industry,location,status,ownerId,contractValue,startOff,renewOff,website,linkedinUrl,tags,contacts,inter,tasks,notes,flags=[],career=[])=>{
+  const id=sid('cl_');
+  const cts=contacts.map((c,i)=>({id:sid('ct_'),name:c[0],role:c[1],email:c[2],phone:c[3],linkedinUrl:c[4]||'',isPrimary:i===0}));
+  return {id,company,industry,location,status,ownerId,contractValue,currency:'INR',contractStart:dayOff(startOff),renewalDate:dayOff(renewOff),website,linkedinUrl,tags,notes,createdAt:now,updatedAt:now,createdById:ownerId,
+   contacts:cts,
+   interactions:inter.map(i=>({id:sid('in_'),type:i[0],date:dayOff(-i[1]),note:i[2],byUserId:ownerId,createdAt:ago(i[1])})),
+   tasks:tasks.map(t=>({id:sid('tk_'),text:t[0],due:dayOff(t[1]),done:false,assigneeId:ownerId,createdAt:now,completedAt:null})),
+   flags:flags.map(f=>({id:sid('fl_'),type:f[0],severity:f[1],note:f[2],contactId:f[3]==null?null:cts[f[3]].id,sourceUrl:f[4]||'',resolved:false,resolvedAt:null,byUserId:ownerId,createdAt:ago(f[5])})),
+   career:career.map(r=>({id:sid('cr_'),contactId:r[0]==null?null:cts[r[0]].id,personName:r[0]==null?r[7]:cts[r[0]].name,title:r[1],organization:r[2],startDate:r[3],endDate:r[4],note:r[5]||'',sourceUrl:r[6]||'',byUserId:ownerId,createdAt:now}))};
+ };
+ const clients=[
+  mk('Apex Engineering Pvt Ltd','IT Services','Pune','Active','usr_03',4800000,-300,65,'apexengineering.in','https://www.linkedin.com/company/apex-engineering-demo',['Enterprise','Design'],
+   [['Sanjay Rao','VP Engineering','sanjay@example.com','+91 98200 11111','https://www.linkedin.com/in/sanjay-rao-demo']],
+   [['Meeting',12,'Quarterly review. Happy with delivery; asked for a second team.'],['Call',40,'Discussed scope extension for Phase 2.']],
+   [['Send Phase 2 proposal',-2],['Schedule renewal discussion',20]],'Key strategic account.',
+   [['VIP','Medium','Executive sponsor attends every quarterly review.',0,'',20]],
+   [[0,'VP Engineering','Apex Engineering','2021-04',null,'Promoted from Director; now owns the full delivery org.','https://www.linkedin.com/in/sanjay-rao-demo'],[0,'Director, Delivery','Apex Engineering','2017-06','2021-03','',''],[0,'Senior Manager','Orbit Systems','2012-08','2017-05','Previously at a vendor in the same space.','']]),
+  mk('Greenleaf Foods','FMCG','Mumbai','Active','usr_03',1250000,-150,25,'greenleaffoods.in','https://www.linkedin.com/company/greenleaf-foods-demo',['Retail'],
+   [['Meera Iyer','Procurement Head','meera@example.com','+91 98100 22222','']],
+   [['Email',5,'Shared revised pricing sheet.']],[['Follow up on pricing approval',3]],'Price sensitive. Renewal coming soon.',
+   [['Payment','Medium','Last two invoices were paid 30+ days late.',0,'',9]],[]),
+  mk('BlueWave Logistics','Logistics','Delhi','On hold','usr_04',2100000,-420,110,'bluewave.co.in','https://www.linkedin.com/company/bluewave-logistics-demo',['Mid-market'],
+   [['Arjun Khanna','COO','arjun@example.com','+91 99900 33333','']],
+   [['Call',20,'Client paused project due to budget freeze until next quarter.']],[['Check in after budget cycle',30]],'Paused until Q1.',
+   [['Risk','High','Budget freeze. Likely to churn if the project is not resumed next quarter.',0,'',20]],
+   [[0,'COO','BlueWave Logistics','2019-02',null,'Project sponsor. Joined after leading operations at a competitor.','']]),
+  mk('Sunrise Pharma','Healthcare','Hyderabad','Active','usr_04',3200000,-90,275,'sunrisepharma.com','https://www.linkedin.com/company/sunrise-pharma-demo',['Enterprise','Regulated'],
+   [['Dr. Lakshmi Reddy','Director IT','lakshmi@example.com','+91 98480 44444','']],
+   [['Meeting',8,'Kick-off for compliance module.']],[['Share compliance checklist',-1]],'',
+   [['Legal','Medium','Compliance audit due. Needs a signed data-processing addendum.',0,'',6]],
+   [[0,'Director IT','Sunrise Pharma','2020-01',null,'','']]),
+  mk('Urban Nest Realty','Real Estate','Bengaluru','Churned','usr_03',650000,-700,-30,'urbannest.in','https://www.linkedin.com/company/urban-nest-demo',['SMB'],
+   [['Vikram Singh','Founder','vikram@example.com','+91 97400 55555','']],
+   [['Call',35,'Did not renew. Moved to a cheaper vendor.']],[],'Win-back candidate in 6 months.',
+   [['Opportunity','Low','Win-back candidate. Revisit pricing in 6 months.',null,'',30]],[]),
+  mk('Nimbus Fintech','Finance','Mumbai','Active','usr_02',5600000,-200,160,'nimbusfin.com','https://www.linkedin.com/company/nimbus-fintech-demo',['Enterprise','Fintech'],
+   [['Ritu Kapoor','CTO','ritu@example.com','+91 98330 66666','']],
+   [['Meeting',3,'Security audit walkthrough.']],[['Send audit report',5]],'High value.',
+   [['VIP','High','Board-level sponsor. Escalate any issue the same day.',0,'',3]],
+   [[0,'CTO','Nimbus Fintech','2022-09',null,'Hired externally to lead the platform rebuild.','']]),
+  mk('Coastal Edu Group','Education','Chennai','Active','usr_04',900000,-60,305,'coastaledu.org','',['Education'],
+   [['Anand Kumar','Registrar','anand@example.com','+91 98840 77777','']],
+   [['Email',15,'Onboarding documents shared.']],[],'',[],[]),
+  mk('Zenith Auto Parts','Manufacturing','Pune','Active','usr_03',1800000,-250,70,'zenithauto.in','https://www.linkedin.com/company/zenith-auto-demo',['Mid-market'],
+   [['Pooja Desai','Plant Manager','pooja@example.com','+91 98220 88888','']],
+   [['Call',9,'Requested a demo of reporting module.']],[['Book reporting demo',7]],'',
+   [['Opportunity','Medium','Plant is expanding to a second site. Upsell the reporting module.',0,'',7]],[])
+ ];
+ return {clients,log:[{id:sid('lg_'),ts:now,userId:'usr_01',action:'Demo data loaded',entityType:'system',entityId:null,clientId:null,changes:[]}]};
+}
+
+/* ============ storage ============ */
+const LS='clientHub_v2';
+let DB;
+function load(){try{const r=localStorage.getItem(LS);DB=r?JSON.parse(r):null}catch(e){DB=null}if(!DB||!Array.isArray(DB.clients))DB=seed()}
+function save(){try{localStorage.setItem(LS,JSON.stringify(DB))}catch(e){}}
+function addLog(action,clientId,meta={}){
+ DB.log.unshift({id:uid('lg_'),ts:new Date().toISOString(),userId:ME.id,action,entityType:meta.entityType||(clientId?'client':'session'),entityId:meta.entityId||clientId||null,clientId:clientId||null,changes:meta.changes||[]});
+ DB.log=DB.log.slice(0,500);save();
+}
+const userName=id=>(USERS.find(u=>u.id===id)||{name:'Unassigned'}).name;
+const getC=id=>DB.clients.find(c=>c.id===id);
+const nowIso=()=>new Date().toISOString();
+
+/* ============ session & permissions ============ */
+let ME=null;
+const ui={view:'dashboard',cid:null,tab:'overview',q:'',fs:'',fi:'',fo:'',flagged:false,mode:'list'};
+const canEdit=c=>ME.role!=='staff'||c.ownerId===ME.id;
+const canDel=()=>ME.role!=='staff';
+const isAdmin=()=>ME.role==='admin';
+const canEntry=e=>ME.role!=='staff'||e.byUserId===ME.id;   // flags & career: anyone can add, owners/managers can change
+const openFlags=c=>c.flags.filter(f=>!f.resolved).sort((a,b)=>SEV[b.severity]-SEV[a.severity]);
+
+function showLogin(){
+ $('#shell').style.display='none';$('#login').style.display='flex';
+ $('#login').innerHTML=`<div class="lcard"><div class="brand" style="padding:0"><span class="mark">C</span>ClientHub</div>
+ <h2>Welcome back</h2><p class="mute">Sign in to your client workspace.</p>
+ <label class="f">Account</label><select id="lu">${USERS.map(u=>`<option value="${u.id}">${esc(u.name)} · ${u.role}</option>`).join('')}</select>
+ <label class="f">Password</label><input id="lp" type="password" value="demo123" autocomplete="off">
+ <button class="btn pri wide" onclick="doLogin()">Sign in</button>
+ <div class="hintbox"><b>Demo:</b> any account, password <code>demo123</code>. Admin: everything · Manager: edit all clients · Staff: edit own clients, but can add flags &amp; career on any client.</div></div>`;
+ $('#lp').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+}
+function doLogin(){
+ if($('#lp').value!=='demo123'){toast('Wrong password (demo: demo123)');return}
+ ME=USERS.find(u=>u.id===$('#lu').value);try{sessionStorage.setItem('chu',ME.id)}catch(e){}
+ $('#login').style.display='none';$('#shell').style.display='flex';
+ ui.view='dashboard';addLog('Signed in',null,{entityType:'session',entityId:ME.id});render();
+}
+function logout(){addLog('Signed out',null,{entityType:'session',entityId:ME.id});try{sessionStorage.removeItem('chu')}catch(e){}ME=null;closeSheet();showLogin()}
+
+/* ============ drawer ============ */
+function sheet(title,body){
+ $('#drawer').innerHTML=`<div class="dh"><h3>${title}</h3><button class="btn icon ghost" onclick="closeSheet()" aria-label="Close">${ico('x')}</button></div><div class="db">${body}</div>`;
+ $('#drawer').classList.add('on');$('#scrim').classList.add('on');
+ setTimeout(()=>{const i=$('#drawer input:not([type=hidden]):not(:disabled):not([type=file]),#drawer textarea');if(i)i.focus()},80);
+}
+function closeSheet(){$('#drawer').classList.remove('on');$('#scrim').classList.remove('on')}
+document.addEventListener('keydown',e=>{
+ if(e.key==='Escape')closeSheet();
+ if(e.key==='/'&&ME&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)){const g=$('#gs');if(g){e.preventDefault();g.focus()}}
+});
+
+/* ============ shell ============ */
+function go(v,cid){ui.view=v;ui.cid=cid||null;ui.tab='overview';render()}
+function openTab(k){ui.tab=k;render(true)}
+function alerts(){
+ const out=[];
+ DB.clients.filter(c=>c.status!=='Churned').forEach(c=>{
+  if(c.renewalDate){const d=daysTo(c.renewalDate);if(d>=0&&d<=30)out.push({c,t:`Renewal ${rel(d)}`})}
+  c.tasks.filter(t=>!t.done&&t.due&&daysTo(t.due)<0).forEach(t=>out.push({c,t:`Overdue task: ${t.text}`}));
+ });
+ DB.clients.forEach(c=>c.flags.filter(f=>!f.resolved&&f.severity==='High').forEach(f=>out.push({c,t:`High flag (${f.type}): ${f.note}`})));
+ return out;
+}
+function render(keep){
+ const y=window.scrollY;
+ const items=[['dashboard','dashboard','Dashboard'],['clients','users','Clients'],['tasks','tasks','Tasks'],['log','clock','Activity']];
+ if(isAdmin())items.push(['users','shield','Admin']);
+ $('#nav').innerHTML=items.map(([k,ic,l])=>`<a class="${ui.view===k||(k==='clients'&&ui.view==='client')?'on':''}" onclick="go('${k}')">${ico(ic)}<span>${l}</span></a>`).join('');
+ $('#me').innerHTML=`${av(ME.name,'round')}<div style="flex:1;min-width:0"><b>${esc(ME.name)}</b><span class="r">${ME.role}</span></div><button class="btn icon ghost sm" onclick="logout()" title="Sign out" aria-label="Sign out">${ico('logout')}</button>`;
+ const n=alerts().length,dark=document.documentElement.dataset.theme==='dark';
+ $('#topbar').innerHTML=`<div class="sb">${ico('search')}<input id="gs" placeholder="Search clients…" onkeydown="if(event.key==='Enter'){ui.q=this.value;go('clients')}"></div><span style="flex:1"></span>
+  <button class="btn icon ghost" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme">${ico(dark?'sun':'moon')}</button>
+  <button class="btn icon ghost" style="position:relative" onclick="showAlerts()" title="Notifications" aria-label="Notifications">${ico('bell')}${n?`<span class="badge-n">${n}</span>`:''}</button>
+  <button class="btn icon ghost" onclick="logout()" title="Sign out" aria-label="Sign out" id="lo-m">${ico('logout')}</button>`;
+ const v={dashboard:vDash,clients:vClients,client:vClient,tasks:vTasks,log:vLog,users:vAdmin}[ui.view];
+ $('#view').innerHTML=v();
+ window.scrollTo(0,keep?y:0);
+}
+function toggleTheme(){const n=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=n;try{localStorage.setItem('clienthub_theme',n)}catch(e){}render(true)}
+function showAlerts(){
+ const a=alerts();
+ sheet('Notifications',`<p class="mute small" style="margin:14px 0">Generated from renewals (next 30 days), overdue tasks and open high-severity flags.</p>
+ ${a.length?a.map(x=>`<div class="li click" onclick="closeSheet();go('client','${x.c.id}')"><div><div class="nm">${esc(x.c.company)}</div><div class="sub">${esc(x.t)}</div></div>${ico('arrowleft').replace('class="i"','class="i" style="transform:rotate(180deg)"')}</div>`).join(''):'<p class="empty">All clear.</p>'}`);
+}
+
+/* ============ dashboard ============ */
+function groupCount(key){const m={};DB.clients.forEach(c=>{const k=key(c);m[k]=(m[k]||0)+1});return Object.entries(m).sort((a,b)=>b[1]-a[1])}
+function bars(rows){const mx=Math.max(1,...rows.map(r=>r[1]));return rows.map(([k,n])=>`<div class="bar2"><div class="t" title="${esc(k)}">${esc(k)}</div><div class="trk"><i style="width:${n/mx*100}%"></i></div><b>${n}</b></div>`).join('')}
+function vDash(){
+ const cs=DB.clients,act=cs.filter(c=>c.status==='Active');
+ const val=act.reduce((s,c)=>s+(+c.contractValue||0),0);
+ const ren=cs.filter(c=>c.status!=='Churned'&&c.renewalDate&&daysTo(c.renewalDate)>=0&&daysTo(c.renewalDate)<=90).sort((a,b)=>a.renewalDate.localeCompare(b.renewalDate));
+ const od=[];cs.forEach(c=>c.tasks.filter(t=>!t.done&&t.due&&daysTo(t.due)<0).forEach(t=>od.push({c,t})));
+ const fl=[];cs.forEach(c=>openFlags(c).forEach(f=>fl.push({c,f})));fl.sort((a,b)=>SEV[b.f.severity]-SEV[a.f.severity]);
+ const h=new Date().getHours(),gr=h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+ const kp=(l,n,s,c)=>`<div class="card kpi"><div class="l">${l}</div><div class="n" ${c?`style="color:var(--${c})"`:''}>${n}</div>${s?`<div class="s">${s}</div>`:''}</div>`;
+ return `<div class="ph"><div><h1>${gr}, ${esc(ME.name.split(' ')[0])}</h1><p>${new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})}</p></div></div>
+ <div class="kpis">
+  ${kp('Total clients',cs.length)}${kp('Active',act.length,'','ok')}${kp('On hold',cs.filter(c=>c.status==='On hold').length,'','warn')}${kp('Churned',cs.filter(c=>c.status==='Churned').length,'','bad')}
+  ${kp('Active contract value',money(val))}${kp('Open flags',fl.length,fl.filter(x=>x.f.severity==='High').length+' high',fl.length?'warn':'')}
+ </div>
+ <div class="g2">
+  <div class="card pad"><div class="ct">Open flags</div>${fl.length?fl.slice(0,6).map(({c,f})=>`<div class="li click" onclick="go('client','${c.id}');openTab('flags')"><div style="min-width:0"><div class="nm">${esc(c.company)}</div><div class="sub" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:340px">${esc(f.type)} · ${esc(f.note)}</div></div><span class="pill nodot sev-${f.severity}">${f.severity}</span></div>`).join(''):'<p class="empty">No open flags.</p>'}</div>
+  <div class="card pad"><div class="ct">Upcoming renewals · 90 days</div>${ren.length?ren.map(c=>{const d=daysTo(c.renewalDate);return `<div class="li click" onclick="go('client','${c.id}')"><div><div class="nm">${esc(c.company)}</div><div class="sub">${fmtDate(c.renewalDate)}</div></div><span class="pill nodot ${d<=30?'sev-Medium':''}">${rel(d)}</span></div>`}).join(''):'<p class="empty">None.</p>'}</div>
+  <div class="card pad"><div class="ct">Overdue follow-ups</div>${od.length?od.map(x=>`<div class="li click" onclick="go('client','${x.c.id}')"><div><div class="nm">${esc(x.t.text)}</div><div class="sub">${esc(x.c.company)}</div></div><span class="pill nodot sev-High">${fmtDate(x.t.due)}</span></div>`).join(''):'<p class="empty">Nothing overdue.</p>'}</div>
+  <div class="card pad"><div class="ct">Recent activity</div>${DB.log.filter(x=>x.entityType!=='session').slice(0,6).map(x=>`<div class="li"><div style="min-width:0"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:360px">${esc(x.action)}</div><div class="sub">${esc(userName(x.userId))} · ${fmtTs(x.ts)}</div></div></div>`).join('')||'<p class="empty">Nothing yet.</p>'}</div>
+  <div class="card pad"><div class="ct">Clients by industry</div>${bars(groupCount(c=>c.industry||'Other'))}</div>
+  <div class="card pad"><div class="ct">Clients by account owner</div>${bars(groupCount(c=>userName(c.ownerId)))}</div>
+ </div>`;
+}
+
+/* ============ clients list ============ */
+function filtered(){
+ const q=ui.q.toLowerCase();
+ return DB.clients.filter(c=>(!ui.fs||c.status===ui.fs)&&(!ui.fi||c.industry===ui.fi)&&(!ui.fo||c.ownerId===ui.fo)&&(!ui.flagged||c.flags.some(f=>!f.resolved))&&
+  (!q||[c.company,c.industry,c.location,c.tags.join(' '),c.contacts.map(p=>p.name+' '+p.email).join(' '),c.flags.map(f=>f.note).join(' '),c.career.map(r=>r.organization+' '+r.title).join(' ')].join(' ').toLowerCase().includes(q)));
+}
+function renewalCell(c){
+ if(!c.renewalDate)return '<span class="faint">—</span>';
+ if(c.status==='Churned')return `<span class="mute">${fmtDate(c.renewalDate)}</span>`;
+ const d=daysTo(c.renewalDate);
+ return `${fmtDate(c.renewalDate)}<div class="sub" style="${d<0?'color:var(--bad)':d<=30?'color:var(--warn)':''}">${rel(d)}</div>`;
+}
+function flagCell(c){const f=openFlags(c);return f.length?`<span class="pill nodot sev-${f[0].severity}">${ico('flag')} ${f.length}</span>`:'<span class="faint">—</span>'}
+function listHtml(rows){
+ if(!rows.length)return '<div class="card pad empty">No clients match these filters.</div>';
+ if(ui.mode==='grid')return `<div class="cards">${rows.map(c=>`<div class="card cc" onclick="go('client','${c.id}')"><div class="cell">${av(c.company)}<div style="min-width:0"><div class="nm">${esc(c.company)}</div><div class="sub">${esc(c.industry)} · ${esc(c.location)}</div></div></div>
+  <div class="row2"><span>${statusPill(c.status)}</span><span class="nm" style="color:var(--ink)">${money(c.contractValue)}</span></div>
+  <div class="row2"><span>${esc(userName(c.ownerId))}</span><span>${flagCell(c)}</span></div></div>`).join('')}</div>`;
+ return `<div class="card tw"><table><thead><tr><th>Client</th><th class="hm">Industry</th><th>Status</th><th class="hm">Owner</th><th class="hm">Value</th><th>Renewal</th><th>Flags</th></tr></thead><tbody>${rows.map(c=>`<tr class="row" onclick="go('client','${c.id}')">
+  <td><div class="cell">${av(c.company)}<div><div class="nm">${esc(c.company)}</div><div>${c.tags.map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</div></div></div></td>
+  <td class="hm">${esc(c.industry)}<div class="sub">${esc(c.location)}</div></td><td>${statusPill(c.status)}</td>
+  <td class="hm"><div class="cell">${av(userName(c.ownerId),'sm')}${esc(userName(c.ownerId))}</div></td><td class="num hm">${money(c.contractValue)}</td><td class="num">${renewalCell(c)}</td><td>${flagCell(c)}</td></tr>`).join('')}</tbody></table></div>`;
+}
+function vClients(){
+ const inds=[...new Set(DB.clients.map(c=>c.industry).filter(Boolean))].sort();
+ const rows=filtered();
+ return `<div class="ph"><div><h1>Clients</h1><p id="cnt">${rows.length} of ${DB.clients.length} clients</p></div>
+  <div class="acts"><button class="btn" onclick="exportCSV()">${ico('download')}<span class="hm">Export</span></button><button class="btn" onclick="importSheet()">${ico('upload')}<span class="hm">Import</span></button><button class="btn pri" onclick="clientForm()">${ico('plus')} Add client</button></div></div>
+ <div class="tools">
+  <div class="sb">${ico('search')}<input id="q" placeholder="Filter by name, contact, tag, flag…" value="${esc(ui.q)}" oninput="ui.q=this.value;refreshList()"></div>
+  <select onchange="ui.fs=this.value;render(true)"><option value="">All status</option>${STATUSES.map(s=>`<option ${ui.fs===s?'selected':''}>${s}</option>`).join('')}</select>
+  <select onchange="ui.fi=this.value;render(true)"><option value="">All industries</option>${inds.map(s=>`<option ${ui.fi===s?'selected':''}>${esc(s)}</option>`).join('')}</select>
+  <select onchange="ui.fo=this.value;render(true)"><option value="">All owners</option>${USERS.map(u=>`<option value="${u.id}" ${ui.fo===u.id?'selected':''}>${esc(u.name)}</option>`).join('')}</select>
+  <button class="btn ${ui.flagged?'on':''}" onclick="ui.flagged=!ui.flagged;render(true)">${ico('flag')} Flagged</button>
+  <span style="flex:1"></span>
+  <div class="seg"><button class="${ui.mode==='list'?'on':''}" onclick="ui.mode='list';render(true)" title="List" aria-label="List view">${ico('list')}</button><button class="${ui.mode==='grid'?'on':''}" onclick="ui.mode='grid';render(true)" title="Cards" aria-label="Card view">${ico('grid')}</button></div>
+ </div><div id="list">${listHtml(rows)}</div>`;
+}
+function refreshList(){const r=filtered();$('#list').innerHTML=listHtml(r);$('#cnt').textContent=`${r.length} of ${DB.clients.length} clients`}
+
+/* ============ client form ============ */
+const FIELDS=[['company','Company'],['industry','Industry'],['location','Location'],['status','Status'],['ownerId','Account owner'],['contractValue','Contract value'],['contractStart','Contract start'],['renewalDate','Renewal date'],['website','Website'],['linkedinUrl','LinkedIn page'],['tags','Tags'],['notes','Notes']];
+function clientForm(id){
+ const c=id?getC(id):{company:'',industry:'',location:'',status:'Active',ownerId:ME.id,contractValue:'',contractStart:today(),renewalDate:'',website:'',linkedinUrl:'',tags:[],notes:''};
+ sheet(id?'Edit client':'Add client',`<form onsubmit="saveClient(event,'${id||''}')">
+ <label class="f">Company *</label><input name="company" required value="${esc(c.company)}">
+ <div class="r2"><div><label class="f">Industry</label><input name="industry" value="${esc(c.industry)}"></div><div><label class="f">Location</label><input name="location" value="${esc(c.location)}"></div>
+ <div><label class="f">Status</label><select name="status">${STATUSES.map(s=>`<option ${c.status===s?'selected':''}>${s}</option>`).join('')}</select></div>
+ <div><label class="f">Account owner</label><select name="ownerId" ${ME.role==='staff'?'disabled':''}>${USERS.map(u=>`<option value="${u.id}" ${c.ownerId===u.id?'selected':''}>${esc(u.name)}</option>`).join('')}</select></div>
+ <div><label class="f">Contract value (₹)</label><input type="number" min="0" name="contractValue" value="${esc(c.contractValue)}"></div><div><label class="f">Website</label><input name="website" value="${esc(c.website)}"></div>
+ <div><label class="f">Contract start</label><input type="date" name="contractStart" value="${esc(c.contractStart)}"></div><div><label class="f">Renewal date</label><input type="date" name="renewalDate" value="${esc(c.renewalDate)}"></div></div>
+ <label class="f">Company LinkedIn page (link only)</label><input name="linkedinUrl" placeholder="https://linkedin.com/company/…" value="${esc(c.linkedinUrl)}">
+ <label class="f">Tags (comma separated)</label><input name="tags" value="${esc(c.tags.join(', '))}">
+ <label class="f">Notes</label><textarea name="notes" rows="3">${esc(c.notes)}</textarea>
+ <div class="df"><button type="button" class="btn" onclick="closeSheet()">Cancel</button><button class="btn pri">Save</button></div></form>`);
+}
+function saveClient(e,id){
+ e.preventDefault();const f=Object.fromEntries(new FormData(e.target));
+ if(ME.role==='staff')f.ownerId=id?getC(id).ownerId:ME.id;
+ f.tags=(f.tags||'').split(',').map(s=>s.trim()).filter(Boolean);f.contractValue=+f.contractValue||0;
+ if(id){
+  const c=getC(id),ch=[];
+  FIELDS.forEach(([k,l])=>{const a=Array.isArray(c[k])?c[k].join(', '):(c[k]??''),b=Array.isArray(f[k])?f[k].join(', '):(f[k]??'');if(String(a)!==String(b))ch.push({field:k,label:l,from:a,to:b})});
+  Object.assign(c,f,{updatedAt:nowIso()});
+  const txt=ch.map(x=>`${x.label}: ${x.field==='ownerId'?userName(x.from)+' → '+userName(x.to):(x.from||'—')+' → '+(x.to||'—')}`).join('; ');
+  addLog(ch.length?'Updated – '+txt:'Saved (no changes)',id,{changes:ch});toast('Client updated');
+ }else{
+  const c={id:uid('cl_'),...f,currency:'INR',createdAt:nowIso(),updatedAt:nowIso(),createdById:ME.id,contacts:[],interactions:[],tasks:[],flags:[],career:[]};
+  DB.clients.unshift(c);addLog('Created client '+c.company,c.id);toast('Client added');id=c.id;
+ }
+ save();closeSheet();ui.view='client';ui.cid=id;render();
+}
+function delClient(id){
+ const c=getC(id);if(!confirm(`Delete ${c.company}? This cannot be undone.`))return;
+ DB.clients=DB.clients.filter(x=>x.id!==id);addLog('Deleted client '+c.company,null,{entityType:'client',entityId:id});toast('Client deleted');go('clients');
+}
+
+/* ============ client page ============ */
+function vClient(){
+ const c=getC(ui.cid);if(!c)return `<div class="ph"><h1>Client not found</h1></div>`;
+ const ed=canEdit(c),of=openFlags(c),openT=c.tasks.filter(t=>!t.done),overdue=openT.filter(t=>t.due&&daysTo(t.due)<0).length;
+ const d=c.renewalDate?daysTo(c.renewalDate):null;
+ const tabs=[['overview','Overview',''],['contacts','Contacts',c.contacts.length],['history','History',c.interactions.length],['tasks','Tasks',openT.length],['flags','Flags & career',of.length||''],['changes','Change log','']];
+ const kp=(l,n,s,col)=>`<div class="card kpi"><div class="l">${l}</div><div class="n" ${col?`style="color:var(--${col})"`:''}>${n}</div><div class="s">${s||'&nbsp;'}</div></div>`;
+ return `<a class="back" onclick="go('clients')">${ico('arrowleft')} All clients</a>
+ <div class="ph" style="margin-top:14px"><div class="cell" style="gap:14px">${av(c.company,'lg')}<div><h1>${esc(c.company)}</h1><p>${statusPill(c.status)} <span style="margin-left:6px">${esc(c.industry)}${c.location?' · '+esc(c.location):''} · ${esc(userName(c.ownerId))}</span></p></div></div>
+  <div class="acts">${ed?`<button class="btn" onclick="clientForm('${c.id}')">${ico('edit')} Edit</button>${canDel()?`<button class="btn danger" onclick="delClient('${c.id}')">${ico('trash')} Delete</button>`:''}`:`<span class="pill nodot">Read-only · not your client</span>`}</div></div>
+ ${of.length?`<div class="fchips">${of.map(f=>`<span class="pill nodot sev-${f.severity}" onclick="openTab('flags')" title="${esc(f.note)}">${ico('flag')} ${esc(f.type)}: ${esc(f.note.length>56?f.note.slice(0,56)+'…':f.note)}</span>`).join('')}</div>`:''}
+ <div class="kpis">${kp('Contract value',money(c.contractValue),esc(c.currency||'INR'))}${kp('Renewal',fmtDate(c.renewalDate),d===null||c.status==='Churned'?'':rel(d),d!==null&&c.status!=='Churned'&&d<=30?(d<0?'bad':'warn'):'')}${kp('Open tasks',openT.length,overdue?overdue+' overdue':'',overdue?'bad':'')}${kp('Open flags',of.length,of.filter(f=>f.severity==='High').length+' high',of.length?'warn':'')}</div>
+ <div class="tabs">${tabs.map(([k,l,n])=>`<a class="${ui.tab===k?'on':''}" onclick="openTab('${k}')">${l}${n!==''?`<i>${n}</i>`:''}</a>`).join('')}</div>
+ ${({overview:tOverview,contacts:tContacts,history:tHistory,tasks:tTasks,flags:tFlags,changes:tChanges})[ui.tab](c,ed)}`;
+}
+function tlHtml(list,del,cid){return `<div class="tl">${list.map(i=>`<div class="it"><b>${esc(i.type)}</b> <span class="mute">· ${fmtDate(i.date)} · ${esc(userName(i.byUserId))}</span>${del?` <a class="small" style="color:var(--bad)" onclick="delInter('${cid}','${i.id}')">remove</a>`:''}<div>${esc(i.note)}</div></div>`).join('')}</div>`}
+function tOverview(c){
+ const recent=[...c.interactions].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,4);
+ const pc=c.contacts.find(p=>p.isPrimary)||c.contacts[0];
+ return `<div class="g2" style="margin-top:0">
+ <div class="card pad"><div class="ct">Details</div><div class="kv">
+  <div>Primary contact</div><div>${pc?`${esc(pc.name)} <span class="mute">· ${esc(pc.role)}</span>`:'—'}</div>
+  <div>Contract start</div><div>${fmtDate(c.contractStart)}</div>
+  <div>Website</div><div>${c.website?`<a href="${esc(safeUrl(c.website))}" target="_blank" rel="noopener">${esc(c.website)} ${ico('ext')}</a>`:'—'}</div>
+  <div>LinkedIn page</div><div>${c.linkedinUrl?`<a href="${esc(safeUrl(c.linkedinUrl))}" target="_blank" rel="noopener">Open page ${ico('ext')}</a>`:'<span class="faint">Not added</span>'}</div>
+  <div>Tags</div><div>${c.tags.map(t=>`<span class="chip">${esc(t)}</span>`).join('')||'—'}</div>
+  <div>Notes</div><div>${esc(c.notes)||'—'}</div>
+  <div>Last updated</div><div class="mute">${fmtTs(c.updatedAt)}</div></div></div>
+ <div class="card pad"><div class="ct">Latest activity</div>${recent.length?tlHtml(recent):'<p class="empty">No interactions yet.</p>'}</div></div>`;
+}
+
+/* contacts */
+function tContacts(c,ed){
+ return `<div class="card"><div class="pad" style="padding-bottom:0;display:flex;justify-content:space-between;align-items:center"><div class="ct" style="margin:0">People at ${esc(c.company)}</div>${ed?`<button class="btn sm pri" onclick="contactForm('${c.id}')">${ico('plus')} Add contact</button>`:''}</div>
+ <div class="tw"><table style="margin-top:8px"><thead><tr><th>Name</th><th>Email</th><th class="hm">Phone</th><th>LinkedIn</th><th></th></tr></thead><tbody>${c.contacts.map(p=>`<tr><td><div class="cell">${av(p.name,'round')}<div><div class="nm">${esc(p.name)}${p.isPrimary?' <span class="chip">Primary</span>':''}</div><div class="sub">${esc(p.role)}</div></div></div></td><td>${esc(p.email)}</td><td class="hm">${esc(p.phone)}</td><td>${p.linkedinUrl?`<a href="${esc(safeUrl(p.linkedinUrl))}" target="_blank" rel="noopener">Profile ${ico('ext')}</a>`:'<span class="faint">—</span>'}</td>
+ <td style="text-align:right;white-space:nowrap">${ed?`<button class="btn sm ghost icon" onclick="contactForm('${c.id}','${p.id}')" title="Edit">${ico('edit')}</button><button class="btn sm ghost icon danger" onclick="delContact('${c.id}','${p.id}')" title="Remove">${ico('trash')}</button>`:''}</td></tr>`).join('')||'<tr><td colspan="5" class="empty">No contacts yet.</td></tr>'}</tbody></table></div></div>`;
+}
+function contactForm(cid,pid){
+ const p=pid?getC(cid).contacts.find(x=>x.id===pid):{name:'',role:'',email:'',phone:'',linkedinUrl:'',isPrimary:!getC(cid).contacts.length};
+ sheet(pid?'Edit contact':'Add contact',`<form onsubmit="saveContact(event,'${cid}','${pid||''}')">
+ <div class="r2"><div><label class="f">Name *</label><input name="name" required value="${esc(p.name)}"></div><div><label class="f">Role</label><input name="role" value="${esc(p.role)}"></div>
+ <div><label class="f">Email</label><input type="email" name="email" value="${esc(p.email)}"></div><div><label class="f">Phone</label><input name="phone" value="${esc(p.phone)}"></div></div>
+ <label class="f">LinkedIn profile (link only)</label><input name="linkedinUrl" placeholder="https://linkedin.com/in/…" value="${esc(p.linkedinUrl)}">
+ <label style="display:flex;gap:8px;align-items:center;margin-top:16px"><input type="checkbox" name="isPrimary" ${p.isPrimary?'checked':''}> Primary contact</label>
+ <div class="df"><button type="button" class="btn" onclick="closeSheet()">Cancel</button><button class="btn pri">Save</button></div></form>`);
+}
+function saveContact(e,cid,pid){
+ e.preventDefault();const fd=Object.fromEntries(new FormData(e.target)),c=getC(cid);
+ const f={name:fd.name,role:fd.role||'',email:fd.email||'',phone:fd.phone||'',linkedinUrl:fd.linkedinUrl||'',isPrimary:!!fd.isPrimary};
+ let rec;
+ if(pid){rec=c.contacts.find(x=>x.id===pid);Object.assign(rec,f)}else{rec={id:uid('ct_'),...f};c.contacts.push(rec)}
+ if(rec.isPrimary)c.contacts.forEach(x=>{if(x!==rec)x.isPrimary=false});
+ else if(!c.contacts.some(x=>x.isPrimary))c.contacts[0].isPrimary=true;
+ c.updatedAt=nowIso();addLog(`${pid?'Edited':'Added'} contact ${f.name}`,cid,{entityType:'contact',entityId:rec.id});closeSheet();render(true);toast('Contact saved');
+}
+function delContact(cid,pid){
+ const c=getC(cid),p=c.contacts.find(x=>x.id===pid);if(!confirm('Remove '+p.name+'?'))return;
+ c.contacts=c.contacts.filter(x=>x.id!==pid);
+ c.flags.forEach(f=>{if(f.contactId===pid)f.contactId=null});
+ c.career.forEach(r=>{if(r.contactId===pid)r.contactId=null});   // keep the career entry, keep the person's name
+ if(c.contacts.length&&!c.contacts.some(x=>x.isPrimary))c.contacts[0].isPrimary=true;
+ addLog('Removed contact '+p.name,cid,{entityType:'contact',entityId:pid});render(true);
+}
+
+/* history */
+function tHistory(c,ed){
+ return `<div class="card pad">${ed?`<form class="inline" onsubmit="addInter(event,'${c.id}')" style="grid-template-columns:110px 150px 1fr auto"><select name="type">${INTER_TYPES.map(t=>`<option>${t}</option>`).join('')}</select><input type="date" name="date" value="${today()}"><input name="note" required placeholder="What happened?"><button class="btn pri">Add</button></form>`:''}
+ ${c.interactions.length?tlHtml([...c.interactions].sort((a,b)=>b.date.localeCompare(a.date)),ed,c.id):'<p class="empty">No history recorded.</p>'}</div>`;
+}
+function addInter(e,cid){e.preventDefault();const f=Object.fromEntries(new FormData(e.target)),i={id:uid('in_'),type:f.type,date:f.date,note:f.note,byUserId:ME.id,createdAt:nowIso()};getC(cid).interactions.push(i);addLog(`Logged ${f.type}: ${f.note.slice(0,60)}`,cid,{entityType:'interaction',entityId:i.id});render(true);toast('Added to history')}
+function delInter(cid,id){const c=getC(cid);c.interactions=c.interactions.filter(i=>i.id!==id);addLog('Removed an interaction',cid,{entityType:'interaction',entityId:id});render(true)}
+
+/* tasks */
+function tTasks(c,ed){
+ return `<div class="card pad">${ed?`<form class="inline" onsubmit="addTask(event,'${c.id}')" style="grid-template-columns:1fr 150px 150px auto"><input name="text" required placeholder="New follow-up task…"><input type="date" name="due" value="${dayOff(7)}"><select name="assigneeId">${USERS.map(u=>`<option value="${u.id}" ${u.id===ME.id?'selected':''}>${esc(u.name)}</option>`).join('')}</select><button class="btn pri">Add</button></form>`:''}
+ ${c.tasks.map(t=>`<div class="li"><div class="cell" style="flex:1;min-width:0"><input type="checkbox" ${t.done?'checked':''} ${ed?'':'disabled'} onchange="toggleTask('${c.id}','${t.id}')"><span class="${t.done?'done':''}">${esc(t.text)}</span></div>
+  <div class="cell" style="gap:10px;flex-shrink:0">${av(userName(t.assigneeId),'sm')}<span class="small ${!t.done&&daysTo(t.due)<0?'':'mute'}" style="${!t.done&&daysTo(t.due)<0?'color:var(--bad)':''}">${fmtDate(t.due)}</span>${ed?`<button class="btn sm ghost icon danger" onclick="delTask('${c.id}','${t.id}')" title="Remove">${ico('x')}</button>`:''}</div></div>`).join('')||'<p class="empty">No tasks.</p>'}</div>`;
+}
+function addTask(e,cid){e.preventDefault();const f=Object.fromEntries(new FormData(e.target)),t={id:uid('tk_'),text:f.text,due:f.due,done:false,assigneeId:f.assigneeId,createdAt:nowIso(),completedAt:null};getC(cid).tasks.push(t);addLog('Added task: '+f.text,cid,{entityType:'task',entityId:t.id});render(true)}
+function toggleTask(cid,id){const t=getC(cid).tasks.find(x=>x.id===id);t.done=!t.done;t.completedAt=t.done?nowIso():null;addLog((t.done?'Completed':'Re-opened')+' task: '+t.text,cid,{entityType:'task',entityId:id});render(true)}
+function delTask(cid,id){const c=getC(cid);c.tasks=c.tasks.filter(t=>t.id!==id);addLog('Removed a task',cid,{entityType:'task',entityId:id});render(true)}
+
+/* ===== flags & career (employee-entered) ===== */
+function flagItem(c,f){
+ const who=f.contactId?(c.contacts.find(x=>x.id===f.contactId)||{}).name:null,can=canEntry(f);
+ return `<div class="fl ${f.resolved?'res':''}"><span class="sevbar sev-${f.severity}"></span><div style="flex:1;min-width:0">
+  <div><span class="pill nodot sev-${f.severity}">${f.severity}</span> <span class="chip">${esc(f.type)}</span>${who?`<span class="chip">re: ${esc(who)}</span>`:''}${f.resolved?'<span class="chip">Resolved</span>':''}</div>
+  <div class="ftxt">${esc(f.note)}</div>
+  <div class="meta">${esc(userName(f.byUserId))} · ${fmtTs(f.createdAt)}${f.sourceUrl?` · <a href="${esc(safeUrl(f.sourceUrl))}" target="_blank" rel="noopener">Source ${ico('ext')}</a>`:''}</div></div>
+  <div class="facts">${can?`<button class="btn sm" onclick="toggleFlag('${c.id}','${f.id}')">${f.resolved?'Reopen':'Resolve'}</button><button class="btn sm ghost icon" onclick="flagForm('${c.id}','${f.id}')" title="Edit">${ico('edit')}</button><button class="btn sm ghost icon danger" onclick="delFlag('${c.id}','${f.id}')" title="Delete">${ico('trash')}</button>`:''}</div></div>`;
+}
+function careerBlock(c){
+ const groups={};c.career.forEach(r=>{(groups[r.personName]=groups[r.personName]||[]).push(r)});
+ const names=Object.keys(groups);
+ if(!names.length)return '<p class="empty">No career updates yet. Add one when you find a job change, promotion or past role for someone at this client.</p>';
+ return names.map(n=>`<div class="grp"><div class="who">${av(n,'sm')}${esc(n)} ${groups[n].some(r=>r.contactId)?'<span class="chip">Contact</span>':''}</div><div class="tl">${groups[n].sort((a,b)=>(b.startDate||'').localeCompare(a.startDate||'')).map(r=>`<div class="it">
+  <div><b>${esc(r.title)}</b> <span class="mute">· ${esc(r.organization)}</span></div><div class="small mute">${fmtMonth(r.startDate)} – ${r.endDate?fmtMonth(r.endDate):'Present'}</div>
+  ${r.note?`<div style="margin-top:3px">${esc(r.note)}</div>`:''}
+  <div class="meta">Added by ${esc(userName(r.byUserId))} · ${fmtTs(r.createdAt)}${r.sourceUrl?` · <a href="${esc(safeUrl(r.sourceUrl))}" target="_blank" rel="noopener">Source ${ico('ext')}</a>`:''}${canEntry(r)?` · <a onclick="careerForm('${c.id}','${r.id}')">Edit</a> · <a style="color:var(--bad)" onclick="delCareer('${c.id}','${r.id}')">Remove</a>`:''}</div></div>`).join('')}</div></div>`).join('');
+}
+function tFlags(c){
+ const fl=[...c.flags].sort((a,b)=>(a.resolved-b.resolved)||(SEV[b.severity]-SEV[a.severity])||b.createdAt.localeCompare(a.createdAt));
+ return `<div class="note">Anyone on the team can add a flag or a career update when they come across one. Every entry shows who added it, when, and the source.</div>
+ <div class="g2" style="margin-top:0;align-items:start">
+ <div class="card pad"><div class="ct">Flags<button class="btn sm pri" onclick="flagForm('${c.id}')">${ico('plus')} Add flag</button></div>${fl.length?fl.map(f=>flagItem(c,f)).join(''):'<p class="empty">No flags. Add one if you spot a risk, an opportunity or something the team should know.</p>'}</div>
+ <div class="card pad"><div class="ct">Career updates<button class="btn sm pri" onclick="careerForm('${c.id}')">${ico('plus')} Add career update</button></div>${careerBlock(c)}</div></div>`;
+}
+function contactOptions(c,sel,extra){return (extra||'')+c.contacts.map(p=>`<option value="${p.id}" ${sel===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}
+function flagForm(cid,fid){
+ const c=getC(cid),f=fid?c.flags.find(x=>x.id===fid):{type:'Risk',severity:'Medium',note:'',contactId:null,sourceUrl:''};
+ sheet(fid?'Edit flag':'Add flag',`<form onsubmit="saveFlag(event,'${cid}','${fid||''}')">
+ <div class="r2"><div><label class="f">Type</label><select name="type">${FLAG_TYPES.map(t=>`<option ${f.type===t?'selected':''}>${t}</option>`).join('')}</select></div>
+ <div><label class="f">Severity</label><select name="severity">${['Low','Medium','High'].map(t=>`<option ${f.severity===t?'selected':''}>${t}</option>`).join('')}</select></div></div>
+ <label class="f">About</label><select name="contactId">${contactOptions(c,f.contactId,'<option value="">The company as a whole</option>')}</select>
+ <label class="f">What did you find? *</label><textarea name="note" rows="4" required placeholder="Keep it short and factual.">${esc(f.note)}</textarea>
+ <label class="f">Source link (optional)</label><input name="sourceUrl" placeholder="https://…" value="${esc(f.sourceUrl)}">
+ <div class="df"><button type="button" class="btn" onclick="closeSheet()">Cancel</button><button class="btn pri">${fid?'Save':'Add flag'}</button></div></form>`);
+}
+function saveFlag(e,cid,fid){
+ e.preventDefault();const fd=Object.fromEntries(new FormData(e.target)),c=getC(cid);
+ const f={type:fd.type,severity:fd.severity,contactId:fd.contactId||null,note:fd.note.trim(),sourceUrl:fd.sourceUrl.trim()};
+ let rec;
+ if(fid){rec=c.flags.find(x=>x.id===fid);Object.assign(rec,f)}else{rec={id:uid('fl_'),...f,resolved:false,resolvedAt:null,byUserId:ME.id,createdAt:nowIso()};c.flags.push(rec)}
+ c.updatedAt=nowIso();addLog(`${fid?'Edited':'Added'} ${f.severity} ${f.type} flag: ${f.note.slice(0,60)}`,cid,{entityType:'flag',entityId:rec.id});
+ closeSheet();render(true);toast(fid?'Flag updated':'Flag added');
+}
+function toggleFlag(cid,id){const f=getC(cid).flags.find(x=>x.id===id);f.resolved=!f.resolved;f.resolvedAt=f.resolved?nowIso():null;addLog((f.resolved?'Resolved':'Reopened')+' flag: '+f.note.slice(0,60),cid,{entityType:'flag',entityId:id});render(true)}
+function delFlag(cid,id){if(!confirm('Delete this flag?'))return;const c=getC(cid);c.flags=c.flags.filter(x=>x.id!==id);addLog('Deleted a flag',cid,{entityType:'flag',entityId:id});render(true)}
+function careerForm(cid,rid){
+ const c=getC(cid),r=rid?c.career.find(x=>x.id===rid):{contactId:c.contacts.length?c.contacts[0].id:null,personName:'',title:'',organization:'',startDate:'',endDate:null,note:'',sourceUrl:''};
+ const other=!r.contactId;
+ sheet(rid?'Edit career update':'Add career update',`<form onsubmit="saveCareer(event,'${cid}','${rid||''}')">
+ <label class="f">Person</label><select name="contactId" onchange="document.getElementById('pn').style.display=this.value===''?'block':'none'">${contactOptions(c,r.contactId,'')}<option value="" ${other?'selected':''}>Someone else…</option></select>
+ <div id="pn" style="display:${other?'block':'none'}"><label class="f">Name</label><input name="personName" value="${esc(r.personName)}" placeholder="Full name"></div>
+ <div class="r2"><div><label class="f">Job title *</label><input name="title" required value="${esc(r.title)}"></div><div><label class="f">Organisation *</label><input name="organization" required value="${esc(r.organization)}"></div>
+ <div><label class="f">From</label><input type="month" name="startDate" value="${esc(r.startDate)}"></div><div><label class="f">To</label><input type="month" name="endDate" value="${esc(r.endDate||'')}" ${r.endDate?'':(rid?'disabled':'')}></div></div>
+ <label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" name="current" ${(!r.endDate&&rid)?'checked':''} onchange="this.form.endDate.disabled=this.checked"> Current role</label>
+ <label class="f">Note</label><textarea name="note" rows="3" placeholder="Anything useful, e.g. promoted, moved from a competitor…">${esc(r.note)}</textarea>
+ <label class="f">Source link (optional)</label><input name="sourceUrl" placeholder="https://…" value="${esc(r.sourceUrl)}">
+ <div class="df"><button type="button" class="btn" onclick="closeSheet()">Cancel</button><button class="btn pri">${rid?'Save':'Add update'}</button></div></form>`);
+}
+function saveCareer(e,cid,rid){
+ e.preventDefault();const fd=Object.fromEntries(new FormData(e.target)),c=getC(cid);
+ const contact=fd.contactId?c.contacts.find(x=>x.id===fd.contactId):null;
+ const name=contact?contact.name:(fd.personName||'').trim();
+ if(!name){toast('Please enter the person’s name');return}
+ const f={contactId:contact?contact.id:null,personName:name,title:fd.title.trim(),organization:fd.organization.trim(),startDate:fd.startDate||'',endDate:(fd.current||!fd.endDate)?null:fd.endDate,note:(fd.note||'').trim(),sourceUrl:(fd.sourceUrl||'').trim()};
+ let rec;
+ if(rid){rec=c.career.find(x=>x.id===rid);Object.assign(rec,f)}else{rec={id:uid('cr_'),...f,byUserId:ME.id,createdAt:nowIso()};c.career.push(rec)}
+ c.updatedAt=nowIso();addLog(`${rid?'Edited':'Added'} career update for ${name}: ${f.title} at ${f.organization}`,cid,{entityType:'career',entityId:rec.id});
+ closeSheet();render(true);toast(rid?'Career update saved':'Career update added');
+}
+function delCareer(cid,id){if(!confirm('Remove this career update?'))return;const c=getC(cid);c.career=c.career.filter(x=>x.id!==id);addLog('Removed a career update',cid,{entityType:'career',entityId:id});render(true)}
+
+function tChanges(c){
+ const l=DB.log.filter(x=>x.clientId===c.id);
+ return `<div class="card pad">${l.length?`<div class="tl">${l.map(x=>`<div class="it"><b>${esc(userName(x.userId))}</b> <span class="mute">· ${fmtTs(x.ts)}</span><div>${esc(x.action)}</div></div>`).join('')}</div>`:'<p class="empty">No changes recorded yet.</p>'}</div>`;
+}
+
+/* ============ all tasks ============ */
+function vTasks(){
+ const all=[];DB.clients.forEach(c=>c.tasks.forEach(t=>all.push({c,t})));
+ all.sort((a,b)=>(a.t.done-b.t.done)||a.t.due.localeCompare(b.t.due));
+ const open=all.filter(x=>!x.t.done).length;
+ return `<div class="ph"><div><h1>Tasks</h1><p>${open} open · ${all.length-open} completed</p></div></div>
+ <div class="card tw"><table><thead><tr><th style="width:40px"></th><th>Task</th><th>Client</th><th class="hm">Assignee</th><th>Due</th></tr></thead><tbody>${all.map(({c,t})=>{const late=!t.done&&daysTo(t.due)<0;return `<tr><td><input type="checkbox" ${t.done?'checked':''} ${canEdit(c)?'':'disabled'} onchange="toggleTask('${c.id}','${t.id}')"></td><td class="${t.done?'done':'nm'}">${esc(t.text)}</td><td><a onclick="go('client','${c.id}')">${esc(c.company)}</a></td><td class="hm"><div class="cell">${av(userName(t.assigneeId),'sm')}${esc(userName(t.assigneeId))}</div></td><td class="num" style="${late?'color:var(--bad)':''}">${fmtDate(t.due)}${late?`<div class="sub" style="color:var(--bad)">${rel(daysTo(t.due))}</div>`:''}</td></tr>`}).join('')||'<tr><td colspan="5" class="empty">No tasks.</td></tr>'}</tbody></table></div>`;
+}
+
+/* ============ activity ============ */
+function vLog(){
+ return `<div class="ph"><div><h1>Activity</h1><p>Every sign-in and every change, with who and when.</p></div></div>
+ <div class="card tw"><table><thead><tr><th>When</th><th>User</th><th>Action</th><th class="hm">Client</th></tr></thead><tbody>${DB.log.slice(0,150).map(x=>`<tr><td class="num sub">${fmtTs(x.ts)}</td><td><div class="cell">${av(userName(x.userId),'sm')}${esc(userName(x.userId))}</div></td><td>${esc(x.action)}</td><td class="hm">${x.clientId&&getC(x.clientId)?`<a onclick="go('client','${x.clientId}')">${esc(getC(x.clientId).company)}</a>`:'<span class="faint">—</span>'}</td></tr>`).join('')}</tbody></table></div>`;
+}
+
+/* ============ admin ============ */
+function vAdmin(){
+ return `<div class="ph"><div><h1>Admin</h1><p>Team, roles and data.</p></div></div>
+ <div class="card"><div class="tw"><table><thead><tr><th>Member</th><th>Email</th><th>Role</th><th class="hm">Can do</th></tr></thead><tbody>${USERS.map(u=>`<tr><td><div class="cell">${av(u.name,'round')}<span class="nm">${esc(u.name)}</span></div></td><td>${esc(u.email)}</td><td><span class="pill nodot" style="text-transform:capitalize">${u.role}</span></td><td class="hm sub">${{admin:'Everything, including user management',manager:'View all; edit and delete any client',staff:'View all; edit own clients; add flags & career on any client'}[u.role]}</td></tr>`).join('')}</tbody></table></div></div>
+ <div class="card pad" style="margin-top:12px"><div class="ct">Data</div><p class="mute" style="margin-top:0">This prototype stores data in this browser only. “Export backend JSON” downloads everything in the exact format the backend database uses (see data-structure.md).</p>
+ <div class="acts"><button class="btn pri" onclick="exportBackend()">${ico('db')} Export backend JSON</button><button class="btn danger" onclick="resetDemo()">Reset to demo data</button></div></div>`;
+}
+function resetDemo(){if(!confirm('Erase everything and reload demo data?'))return;DB=seed();save();toast('Demo data restored');go('dashboard')}
+function dl(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();a.remove()}
+
+/* normalised export: one array per table, foreign keys instead of nesting */
+function toBackend(){
+ const o={schemaVersion:'1.0',exportedAt:nowIso(),users:USERS.map(u=>({...u})),clients:[],contacts:[],interactions:[],tasks:[],flags:[],careerEntries:[],activityLog:[]};
+ DB.clients.forEach(c=>{
+  const {contacts,interactions,tasks,flags,career,...client}=c;
+  o.clients.push(client);
+  contacts.forEach(x=>o.contacts.push({id:x.id,clientId:c.id,name:x.name,role:x.role,email:x.email,phone:x.phone,linkedinUrl:x.linkedinUrl,isPrimary:x.isPrimary}));
+  interactions.forEach(x=>o.interactions.push({id:x.id,clientId:c.id,type:x.type,date:x.date,note:x.note,byUserId:x.byUserId,createdAt:x.createdAt}));
+  tasks.forEach(x=>o.tasks.push({id:x.id,clientId:c.id,text:x.text,due:x.due,done:x.done,assigneeId:x.assigneeId,createdAt:x.createdAt,completedAt:x.completedAt}));
+  flags.forEach(x=>o.flags.push({id:x.id,clientId:c.id,contactId:x.contactId,type:x.type,severity:x.severity,note:x.note,sourceUrl:x.sourceUrl,resolved:x.resolved,resolvedAt:x.resolvedAt,byUserId:x.byUserId,createdAt:x.createdAt}));
+  career.forEach(x=>o.careerEntries.push({id:x.id,clientId:c.id,contactId:x.contactId,personName:x.personName,title:x.title,organization:x.organization,startDate:x.startDate||null,endDate:x.endDate||null,note:x.note,sourceUrl:x.sourceUrl,byUserId:x.byUserId,createdAt:x.createdAt}));
+ });
+ o.activityLog=DB.log.map(x=>({id:x.id,ts:x.ts,userId:x.userId,action:x.action,entityType:x.entityType,entityId:x.entityId,clientId:x.clientId,changes:(x.changes||[]).map(({field,from,to})=>({field,from,to}))}));
+ return o;
+}
+function exportBackend(){dl('clienthub-backend-data.json',JSON.stringify(toBackend(),null,2),'application/json');addLog('Exported backend JSON',null,{entityType:'system'});toast('Backend JSON downloaded')}
+
+/* ============ CSV ============ */
+const CSVH=['company','industry','location','status','owner','value','renewal','website','linkedin'];
+const csvq=s=>'"'+String(s??'').replace(/"/g,'""')+'"';
+function exportCSV(){
+ const rows=filtered().map(c=>[c.company,c.industry,c.location,c.status,userName(c.ownerId),c.contractValue,c.renewalDate,c.website,c.linkedinUrl].map(csvq).join(','));
+ dl('clients.csv',[CSVH.join(','),...rows].join('\n'),'text/csv');addLog(`Exported ${rows.length} clients to CSV`,null,{entityType:'system'});toast('CSV downloaded');
+}
+function parseCSV(t){
+ const rows=[];let r=[],f='',inq=false;
+ for(let i=0;i<t.length;i++){const ch=t[i];
+  if(inq){if(ch==='"'){if(t[i+1]==='"'){f+='"';i++}else inq=false}else f+=ch}
+  else if(ch==='"')inq=true;else if(ch===','){r.push(f);f=''}
+  else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&t[i+1]==='\n')i++;r.push(f);f='';if(r.some(x=>x.trim()))rows.push(r);r=[]}
+  else f+=ch}
+ r.push(f);if(r.some(x=>x.trim()))rows.push(r);return rows;
+}
+function templateCSV(){dl('client-template.csv',CSVH.join(',')+'\nAcme Ltd,IT,Mumbai,Active,Priya Nair,500000,2027-03-31,acme.com,\n','text/csv')}
+function importSheet(){
+ sheet('Import clients',`<p class="mute" style="margin-top:14px">Columns: <code>${CSVH.join(', ')}</code>. For Excel files use <i>Save As → CSV</i> first.</p>
+ <button class="btn sm" onclick="templateCSV()">${ico('download')} Download template</button>
+ <label class="f">Choose CSV file</label><input type="file" accept=".csv" id="csvf" style="height:auto;padding:8px" onchange="doImport(this.files[0])">`);
+}
+function doImport(file){
+ if(!file)return;const rd=new FileReader();
+ rd.onload=()=>{
+  const rows=parseCSV(rd.result);if(rows.length<2){toast('That file looks empty');return}
+  const hd=rows[0].map(h=>h.trim().toLowerCase());let n=0;
+  rows.slice(1).forEach(r=>{
+   const o={};hd.forEach((h,i)=>o[h]=(r[i]||'').trim());if(!o.company)return;
+   const ow=USERS.find(u=>u.name.toLowerCase()===(o.owner||'').toLowerCase());
+   DB.clients.push({id:uid('cl_'),company:o.company,industry:o.industry||'',location:o.location||'',status:STATUSES.includes(o.status)?o.status:'Active',ownerId:ow?ow.id:ME.id,contractValue:+o.value||0,currency:'INR',contractStart:today(),renewalDate:/^\d{4}-\d{2}-\d{2}$/.test(o.renewal)?o.renewal:'',website:o.website||'',linkedinUrl:o.linkedin||'',tags:[],notes:'',createdAt:nowIso(),updatedAt:nowIso(),createdById:ME.id,contacts:[],interactions:[],tasks:[],flags:[],career:[]});n++;
+  });
+  addLog(`Imported ${n} clients from CSV`,null,{entityType:'system'});closeSheet();toast(`${n} clients imported`);render();
+ };rd.readAsText(file);
+}
+
+/* ============ boot ============ */
+load();
+let su=null;try{su=sessionStorage.getItem('chu')}catch(e){}
+if(su&&USERS.find(u=>u.id===su)){ME=USERS.find(u=>u.id===su);$('#login').style.display='none';$('#shell').style.display='flex';render()}else showLogin();
+</script>
+</body>
+</html>
